@@ -1,1 +1,11 @@
 # Tomasulo-Algorithm-Simulation
+1- Our main class is the processor class. It's the class we will be using to run our simulation. It consists of a constructor that creates a processor with an instruction queue, a floating point register file and an addition/subtraction reservation station. When you guys add your work, the constructor will also be creating a multiplication/ division reservation station, a load buffer and a store buffer. Apart from the constructor, there are 3 essential methods (issue(), execute(), writeResult()). These three methods implement the logic of the issue, execute and write result stages in each cycle. There is also a main method, where I manually added add/sub instructions in the instruction queue of the processor, initialized the display table that contains our output and created a loop that represents our cycles. The loop calls the issue, execute, and writeResult methods and prints the display table and register file and the add reservation station to the console.
+
+2-The RegFile class contains all the logic of/methods needed for the register file. An instance of this register file is created inside the processor constructor as mentioned above
+
+3-The ADD_SUB_RS class contains all the logic of/methods needed for the addition/subtraction reservation stations. An instance of this reservation station is created inside the processor constructor as mentioned above
+
+4-TODO:
+-The first person needs to create a class for the multiplication reservation station, add the logic for the multiplication/division instructions in the issue, execute, writeResult methods in the processor class. Also add some instructions in the main method.
+-The second person needs to create a class for the store buffer, add the logic for the store instructions in the issue, execute, writeResult methods in the processor class. Also add some instructions in the main method.
+-The third person needs to create a class for the load buffer, add the logic for the load instructions in the issue, execute, writeResult methods in the processor class. Also add some instructions in the main method.
