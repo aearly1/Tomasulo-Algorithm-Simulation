@@ -18,7 +18,7 @@ public class RegFile {
 	
 	public Hashtable<String, Object> readFromRegFile(int regNr)
 	//method to be used when issuing the instruction to fetch the value or tag for the reservation station
-	//I am returning the entire hash table bcs you might needd the value or tag depending on whether Qi is equal to zero or some reservation station tag
+	//I am returning the entire hash table bcs you might need the value or tag depending on whether Qi is equal to zero or some reservation station tag
 	{
 		try
 		{
@@ -40,7 +40,7 @@ public class RegFile {
 			{
 				//found the correct register 
 				ht.put("Qi", 0); //erase tag
-				ht.put("Val", val); //write vale in register
+				ht.put("Val", val); //write value in register
 				break;
 			}
 		}

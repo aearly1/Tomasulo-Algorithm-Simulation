@@ -40,7 +40,7 @@ public class ADD_SUB_RS {
 			{
 				//This reservation station is free so add instruction to it
 				
-				no_unused_rs--;//decrement number of unsed reservation stations by 1
+				no_unused_rs--;//decrement number of unused reservation stations by 1
 				
 				reservationStation[i].put("Busy", 1); //setting the busy to 1 
 				reservationStation[i].put("Op", OP); //setting the operation to ADD or SUB (depending on the instruction)
