@@ -12,8 +12,9 @@ public class Processor {
 	ADD_SUB_RS a_s_reservationStation;
 	LOAD_BUFFER l_buffer;
 	STORE_BUFFER s_buffer;
+	DIV_MUL_RS d_m_reservationStation;
 	/*
-	 * You guys need to add the load buffer, store buffer, mul/div reservation stations
+	 * You guys need to add the load buffer, store buffer 
 	 */
 
 	int cycle;
@@ -25,8 +26,9 @@ public class Processor {
 		a_s_reservationStation = new ADD_SUB_RS(3, 2);
 		l_buffer = new LOAD_BUFFER(3, 1);
 		s_buffer = new STORE_BUFFER(2,2);
+		d_m_reservationStation=new DIV_MUL_RS(4,3,2);
 		/*
-		 * You guys need to initialiaze the load buffer, store buffer, mul/div reservation stations
+		 * You guys need to initialiaze the load buffer, store buffer
 		 */
 	}
 	
@@ -93,12 +95,19 @@ public class Processor {
 
 				Processor.DisplayTable.get(Integer.parseInt(instruction.get("Order"))).put("Issue", cycle+"");//update issue field in table
 			}
-			/*
-			 * You guys need to add your issue logic
-			 */
+			else if(this.d_m_reservationStation.isfree() && (instructionQueue.peek().get("OP").equals("DIV") || instructionQueue.peek().get("OP").equals("MUL")))
+			{
+				Hashtable<String, String> instruction = instructionQueue.remove(); //dequeue instruction
+				Hashtable<String, Object> operand1= floatingPointRegFile.readFromRegFile(Integer.parseInt(instruction.get("RS").substring(1))); 
+				Hashtable<String, Object> operand2= floatingPointRegFile.readFromRegFile(Integer.parseInt(instruction.get("RT").substring(1))); 
+				
+				String tag = this.d_m_reservationStation.issue(instruction.get("OP"), operand1, operand2, instruction.get("Order")); 
+				floatingPointRegFile.setTag(tag, Integer.parseInt(instruction.get("RD").substring(1)));
+				Processor.DisplayTable.get(Integer.parseInt(instruction.get("Order"))).put("Issue", cycle+"");	
+			}
 		}
 	}
-
+	
 	public void reserveMemory(){
 
 		//the instructions with the earliest issue time from both load and store buffers
@@ -139,20 +148,21 @@ public class Processor {
 	//method responsible for execute logic of pipeline
 	{
 		a_s_reservationStation.executeInstructions(cycle);
+		d_m_reservationStation.execute(cycle);
 
 		reserveMemory();
 		l_buffer.executeInstructions(cycle);
 		s_buffer.executeInstructions(cycle);
-		/*
-		 * You guys need to add your execute logic
-		 */
+
 	}
 	
 	public void writeResult()
 	//method responsible for writeResult logic of pipeline
 	{
 		//check if add/sub reservation station has any instruction that need to write back
-		Hashtable finshedInstructionAddSub= a_s_reservationStation.getFinishedInstruction(cycle);
+		Hashtable finshedInstructionAddSub = a_s_reservationStation.getFinishedInstruction(cycle);
+		Hashtable finshedD_M = d_m_reservationStation.getResults(cycle); 
+
 		Hashtable finshedInstructionLoad = l_buffer.getFinishedInstruction(cycle);
 		Hashtable finishedInstructionStore = s_buffer.getFinishedInstruction(cycle);
 		//TODO: other instructions
@@ -163,8 +173,7 @@ public class Processor {
 
 			a_s_reservationStation.recieveTagFromBus((String)finshedInstructionAddSub.get("Tag"),(Double)finshedInstructionAddSub.get("Val"));//send the tag and the written valueof the finished instruction to the add/sub reservation station so that instructions waiting for the value can use it
 			s_buffer.recieveTagFromBus((String)finshedInstructionAddSub.get("Tag"),(Double)finshedInstructionAddSub.get("Val"));
-			//TODO: mul, div
-
+			d_m_reservationStation.recieveTag((String)finshedInstructionAddSub.get("Tag"),(Double)finshedInstructionAddSub.get("Val"));
 
 			floatingPointRegFile.WriteToRegFile((String)finshedInstructionAddSub.get("Tag"), (Double)finshedInstructionAddSub.get("Val")); //send the tag and the written value of the finished instruction to the regFile
 			a_s_reservationStation.eraseInstruction((String) finshedInstructionAddSub.get("Tag")); //erase instruction from reservation station
@@ -179,7 +188,7 @@ public class Processor {
 
 			a_s_reservationStation.recieveTagFromBus(tag, (Double)finshedInstructionLoad.get("Val"));//send the tag and the written valueof the finished instruction to the add/sub reservation station so that instructions waiting for the value can use it
 			s_buffer.recieveTagFromBus(tag, (Double)finshedInstructionLoad.get("Val"));
-			//TODO: mul, div
+			d_m_reservationStation.recieveTag(tag,(Double)finshedInstructionLoad.get("Val"));
 
 			floatingPointRegFile.WriteToRegFile(tag, (Double)finshedInstructionLoad.get("Val")); //send the tag and the written value of the finished instruction to the regFile
 			l_buffer.eraseInstruction(tag); //erase instruction from reservation station
@@ -194,6 +203,18 @@ public class Processor {
 
 			s_buffer.eraseInstruction(tag); //erase instruction from reservation station
 			Processor.DisplayTable.get(Integer.parseInt((String) finishedInstructionStore.get("RowNr"))).put("Write Result", cycle+"");//update write result field in table
+		}
+
+		else if(finshedD_M!=null)
+		{
+						
+			a_s_reservationStation.recieveTagFromBus((String)finshedD_M.get("Tag"),(Double)finshedD_M.get("Val"));
+			d_m_reservationStation.recieveTag((String)finshedD_M.get("Tag"),(Double)finshedD_M.get("Val"));
+			s_buffer.recieveTagFromBus((String)finshedD_M.get("Tag"), (Double)finshedD_M.get("Val"));
+
+			floatingPointRegFile.WriteToRegFile((String)finshedD_M.get("Tag"), (Double)finshedD_M.get("Val")); //send the tag and the written value of the finished instruction to the regFile
+			d_m_reservationStation.eraseInstruction((String) finshedD_M.get("Tag")); //erase instruction from reservation station
+			Processor.DisplayTable.get(Integer.parseInt((String) finshedD_M.get("RowNr"))).put("Write Result", cycle+"");//update write result field in table
 		}
 
 
@@ -236,7 +257,7 @@ public class Processor {
 		instruction2.put("RT", "F5");
 		Hashtable<String, String> instruction3 = new Hashtable();
 		instruction3.put("Order", "2"); //This tells you in in which row of the display table will u find this instruction
-		instruction3.put("OP", "ADD");
+		instruction3.put("OP", "DIV");//start at 6 //finishes at 9
 		instruction3.put("RD", "F3");
 		instruction3.put("RS", "F0");
 		instruction3.put("RT", "F7");
@@ -282,8 +303,31 @@ public class Processor {
 		instruction10.put("RS", "R0");
 		instruction10.put("RT", "F15");
 		instruction10.put("Immediate", "0");
-
-
+		Hashtable<String, String> instruction11 = new Hashtable();
+		instruction11.put("Order", "10"); //This tells you in in which row of the display table will u find this instruction
+		instruction11.put("OP", "DIV");
+		instruction11.put("RD", "F8");
+		instruction11.put("RS", "F11");
+		instruction11.put("RT", "F12");
+		Hashtable<String, String> instruction12 = new Hashtable();
+		instruction12.put("Order", "11"); //This tells you in in which row of the display table will u find this instruction
+		instruction12.put("OP", "SUB");
+		instruction12.put("RD", "F9");
+		instruction12.put("RS", "F6");
+		instruction12.put("RT", "F6");
+		Hashtable<String, String> instruction13 = new Hashtable();
+		instruction13.put("Order", "12"); //This tells you in in which row of the display table will u find this instruction
+		instruction13.put("OP", "ADD");
+		instruction13.put("RD", "F12");
+		instruction13.put("RS", "F12");
+		instruction13.put("RT", "F13");
+		Hashtable<String, String> instruction14 = new Hashtable();
+		instruction14.put("Order", "13"); //This tells you in in which row of the display table will u find this instruction
+		instruction14.put("OP", "MUL");
+		instruction14.put("RD", "F8");
+		instruction14.put("RS", "F9");
+		instruction14.put("RT", "F12");
+		
 		//ADDING INSTRUCTIONS TO INSTRUCTION QUEUE
 		p.instructionQueue.add(instruction1);
 		p.instructionQueue.add(instruction2);
@@ -295,7 +339,10 @@ public class Processor {
 		p.instructionQueue.add(instruction8);
 		p.instructionQueue.add(instruction9);
 		p.instructionQueue.add(instruction10);
-
+		p.instructionQueue.add(instruction11);
+		p.instructionQueue.add(instruction12);
+		p.instructionQueue.add(instruction13);
+		p.instructionQueue.add(instruction14);
 
 		//ADDING INSTRUCTIONS TO DISPLAY TABLE
 		//add instr1
@@ -414,6 +461,55 @@ public class Processor {
 		displayTableRow.put("Write Result", "");
 		Processor.DisplayTable.add(displayTableRow);
 		
+		//add instr11
+		displayTableRow = new Hashtable();
+		displayTableRow.put("Instruction", instruction11.get("OP"));
+		displayTableRow.put("Write Register", instruction11.get("RD"));
+		displayTableRow.put("j", instruction11.get("RS"));
+		displayTableRow.put("k", instruction11.get("RT"));
+		displayTableRow.put("Issue", "");
+		displayTableRow.put("Start of Execution", "");
+		displayTableRow.put("End of Execution", "");
+		displayTableRow.put("Write Result", "");
+		Processor.DisplayTable.add(displayTableRow);
+		
+		//add instr12
+		displayTableRow = new Hashtable();
+		displayTableRow.put("Instruction", instruction12.get("OP"));
+		displayTableRow.put("Write Register", instruction12.get("RD"));
+		displayTableRow.put("j", instruction12.get("RS"));
+		displayTableRow.put("k", instruction12.get("RT"));
+		displayTableRow.put("Issue", "");
+		displayTableRow.put("Start of Execution", "");
+		displayTableRow.put("End of Execution", "");
+		displayTableRow.put("Write Result", "");
+		Processor.DisplayTable.add(displayTableRow);
+
+		//add instr13
+		displayTableRow = new Hashtable();
+		displayTableRow.put("Instruction", instruction12.get("OP"));
+		displayTableRow.put("Write Register", instruction12.get("RD"));
+		displayTableRow.put("j", instruction12.get("RS"));
+		displayTableRow.put("k", instruction12.get("RT"));
+		displayTableRow.put("Issue", "");
+		displayTableRow.put("Start of Execution", "");
+		displayTableRow.put("End of Execution", "");
+		displayTableRow.put("Write Result", "");
+		Processor.DisplayTable.add(displayTableRow);
+
+		//add instr13
+		displayTableRow = new Hashtable();
+		displayTableRow.put("Instruction", instruction14.get("OP"));
+		displayTableRow.put("Write Register", instruction14.get("RD"));
+		displayTableRow.put("j", instruction14.get("RS"));
+		displayTableRow.put("k", instruction14.get("RT"));
+		displayTableRow.put("Issue", "");
+		displayTableRow.put("Start of Execution", "");
+		displayTableRow.put("End of Execution", "");
+		displayTableRow.put("Write Result", "");
+		Processor.DisplayTable.add(displayTableRow);
+		
+		
 		//CYCLE 0 (INITIAL STATE BEFORE RUNNING THE ALGORITHM)
 		System.out.println("Cycle: " + p.cycle);
 		System.out.println();
@@ -421,11 +517,16 @@ public class Processor {
 		System.out.println();
 		System.out.println(p.floatingPointRegFile);
 		System.out.println(p.a_s_reservationStation);
+		System.out.println();
+		System.out.println(p.d_m_reservationStation);
 		System.out.println("---");
 		p.cycle++;
 		
-		while(!p.instructionQueue.isEmpty() || !p.a_s_reservationStation.isEmpty()
-		|| !p.l_buffer.isEmpty() || !p.s_buffer.isEmpty())//keep executing until everything is empty baisically
+		while(!p.instructionQueue.isEmpty() 
+		|| !p.a_s_reservationStation.isEmpty()
+		||!p.d_m_reservationStation.isempty()
+		|| !p.l_buffer.isEmpty() 
+		|| !p.s_buffer.isEmpty())//keep executing until everything is empty baisically
 		{
 			//executing the 3 stages of the pipeline
 			p.issue();
@@ -439,6 +540,7 @@ public class Processor {
 			System.out.println();
 			System.out.println(p.floatingPointRegFile);
 			System.out.println(p.a_s_reservationStation);
+			System.out.println(p.d_m_reservationStation);
 			System.out.println(p.l_buffer);
 			System.out.println(p.s_buffer);
 			System.out.println("---");
