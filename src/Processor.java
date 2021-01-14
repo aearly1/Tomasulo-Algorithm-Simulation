@@ -13,9 +13,6 @@ public class Processor {
 	LOAD_BUFFER l_buffer;
 	STORE_BUFFER s_buffer;
 	DIV_MUL_RS d_m_reservationStation;
-	/*
-	 * You guys need to add the load buffer, store buffer 
-	 */
 
 	int cycle;
 	public Processor()
@@ -27,9 +24,6 @@ public class Processor {
 		l_buffer = new LOAD_BUFFER(3, 1);
 		s_buffer = new STORE_BUFFER(2,2);
 		d_m_reservationStation=new DIV_MUL_RS(4,3,2);
-		/*
-		 * You guys need to initialiaze the load buffer, store buffer
-		 */
 	}
 	
 	public void issue()

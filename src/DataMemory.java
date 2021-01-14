@@ -15,7 +15,7 @@ public class DataMemory {
           return memory[index];
         }
         catch(Exception e) {
-            throw new ArrayIndexOutOfBoundsException("Register does not exist!!");
+            throw new ArrayIndexOutOfBoundsException("Memory location does not exist!!");
         }
     }
 
@@ -26,7 +26,7 @@ public class DataMemory {
             return true;
         }
         catch(Exception e) {
-            throw new ArrayIndexOutOfBoundsException("Register does not exist!!");
+            throw new ArrayIndexOutOfBoundsException("Memory location does not exist!!");
         }
     }
 

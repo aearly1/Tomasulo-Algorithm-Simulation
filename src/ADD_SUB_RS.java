@@ -145,7 +145,7 @@ public class ADD_SUB_RS {
 				double result=0;
 				if(reservationStation[i].get("Op").equals("ADD"))
 					result=(Double) reservationStation[i].get("Vj")+(Double) reservationStation[i].get("Vk");
-				else if(reservationStation[i].get("Op").equals("ADD"))
+				else if(reservationStation[i].get("Op").equals("SUB"))
 					result=(Double)reservationStation[i].get("Vj")-(Double)reservationStation[i].get("Vk");
 
 				tagAndVal.put("Val", result);
