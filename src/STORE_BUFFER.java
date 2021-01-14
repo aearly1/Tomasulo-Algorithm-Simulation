@@ -135,41 +135,31 @@ public class STORE_BUFFER {
             }
         }
     }
+    
 
-
-    public Hashtable getFinishedInstruction(int cycle)
-    {
-        for (int i = 0; i < buffer.length; i++)
-        {
-            if(buffer[i].get("Busy").equals(1) && buffer[i].get("Time").equals(0) && !Processor.DisplayTable
-                    .get(Integer.parseInt((String) buffer[i].get("RowNr"))).get("End of Execution").equals(cycle+""))
-            {
-                //this instruction has finished and would like to write to memory so return its station tag and the value
-                Hashtable tag = new Hashtable<String, String>();
-                tag.put("Tag", buffer[i].get("Tag"));
-
-                //write the value to memory
-                DataMemory.writeLocation((int) buffer[i].get("Address"), (double) buffer[i].get("V") );
-
-                tag.put("RowNr", buffer[i].get("RowNr"));
-                return tag;
-            }
-        }
-        return null;
-    }
-
-    public void eraseInstruction(String tag)
+    public ArrayList<String> eraseFinishedInstructions(int cycle)
     //method used to erase instruction from reservation station
     {
-        int i= Integer.parseInt(tag.substring(1))-1;
-        buffer[i].put("RowNr","");// row number in display table
-        buffer[i].put("Tag", "S"+(i+1));
-        buffer[i].put("Time", 0);//This field is used to keep track of when the instruction finishes execution
-        buffer[i].put("Busy", 0); //available for use
-        buffer[i].put("Q", 0);// tag of RS which holds the value (0 means value is available)
-        buffer[i].put("V", 0);//RT register value
-        buffer[i].put("Address", 0);
-        no_unused_rs++;
+        ArrayList<String> rows = new ArrayList<>();
+        for (int i = 0; i < buffer.length; i++) {
+
+            if(buffer[i].get("Busy").equals(1) && buffer[i].get("Time").equals(0) && !Processor.DisplayTable
+                    .get(Integer.parseInt((String) buffer[i].get("RowNr"))).get("End of Execution").equals(cycle+"")) {
+
+                DataMemory.writeLocation((int) buffer[i].get("Address"), (double) buffer[i].get("V"));
+                rows.add((String) buffer[i].get("RowNr"));
+
+                buffer[i].put("RowNr", "");// row number in display table
+                buffer[i].put("Tag", "S" + (i + 1));
+                buffer[i].put("Time", 0);//This field is used to keep track of when the instruction finishes execution
+                buffer[i].put("Busy", 0); //available for use
+                buffer[i].put("Q", 0);// tag of RS which holds the value (0 means value is available)
+                buffer[i].put("V", 0);//RT register value
+                buffer[i].put("Address", 0);
+                no_unused_rs++;
+            }
+        }
+        return rows;
     }
 
     public boolean isEmpty()

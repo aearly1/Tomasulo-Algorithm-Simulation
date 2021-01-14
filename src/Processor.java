@@ -155,11 +155,8 @@ public class Processor {
 	{
 		//check if add/sub reservation station has any instruction that need to write back
 		Hashtable finshedInstructionAddSub = a_s_reservationStation.getFinishedInstruction(cycle);
-		Hashtable finshedD_M = d_m_reservationStation.getResults(cycle); 
-
+		Hashtable finshedD_M = d_m_reservationStation.getResults(cycle);
 		Hashtable finshedInstructionLoad = l_buffer.getFinishedInstruction(cycle);
-		Hashtable finishedInstructionStore = s_buffer.getFinishedInstruction(cycle);
-		//TODO: other instructions
 
 		if(finshedInstructionAddSub!=null)
 		{
@@ -188,17 +185,6 @@ public class Processor {
 			l_buffer.eraseInstruction(tag); //erase instruction from reservation station
 			Processor.DisplayTable.get(Integer.parseInt((String) finshedInstructionLoad.get("RowNr"))).put("Write Result", cycle+"");//update write result field in table
 		}
-
-		//check if load reservation station has any instruction that need to write back
-		else if(finishedInstructionStore!=null)
-		{
-			//one of the store has finished
-			String tag = (String) finishedInstructionStore.get("Tag");
-
-			s_buffer.eraseInstruction(tag); //erase instruction from reservation station
-			Processor.DisplayTable.get(Integer.parseInt((String) finishedInstructionStore.get("RowNr"))).put("Write Result", cycle+"");//update write result field in table
-		}
-
 		else if(finshedD_M!=null)
 		{
 						
@@ -211,10 +197,10 @@ public class Processor {
 			Processor.DisplayTable.get(Integer.parseInt((String) finshedD_M.get("RowNr"))).put("Write Result", cycle+"");//update write result field in table
 		}
 
-
-		/*
-		 * You guys need to add your write result logic
-		 */
+		//check if store reservation station has any instruction that need to write back
+		for (String RowNr : s_buffer.eraseFinishedInstructions(cycle)){ //erase instructions from reservation station
+			Processor.DisplayTable.get(Integer.parseInt(RowNr)).put("Write Result", cycle + "");//update write result field in table
+		}
 	}
 	
 	public static void DisplayTable()
